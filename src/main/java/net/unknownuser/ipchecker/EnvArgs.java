@@ -2,9 +2,8 @@ package net.unknownuser.ipchecker;
 
 import java.util.*;
 
-public enum Config {
-	API_TOKEN,
-	RESPONSE_CHANNEL;
+public enum EnvArgs {
+	API_TOKEN;
 	
 	public String get() {
 		String argName = this.name();
@@ -20,7 +19,7 @@ public enum Config {
 	public static List<EnvArgMissing> verifyAll() {
 		List<EnvArgMissing> missing = new ArrayList<>();
 		
-		for(Config cfg : Config.values()) {
+		for(EnvArgs cfg : EnvArgs.values()) {
 			try {
 				cfg.get();
 			} catch(EnvArgMissing exc) {
