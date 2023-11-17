@@ -1,7 +1,5 @@
 {
-	"channels": [
-	],
-	"users": [
-	],
-	"server_name": "Minecraft Create Server"
+	"channels": [],
+	"users": [],
+	"server_name": "Your Server name Here (Optional)"
 }

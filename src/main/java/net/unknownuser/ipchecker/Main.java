@@ -37,7 +37,7 @@ public class Main {
 		
 		Discord.applyConfig(config.get());
 		
-		new Thread(Main::watchConfigFile, "config watcher");
+		new Thread(Main::watchConfigFile, "config watcher").start();
 		new Thread(() -> Discord.notifyNewIp(IpChecker.getCurrentIp()), "initial message").start();
 		
 		scheduleCheck();
@@ -46,19 +46,32 @@ public class Main {
 	}
 	
 	private static void watchConfigFile() {
+		System.out.println("watcher started!");
 		try (WatchService watchService = FileSystems.getDefault()
 													.newWatchService()) {
-			configFile.toPath()
-					  .register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
+			Path.of(".")
+				.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
 			
 			WatchKey key;
 			while((key = watchService.take()) != null) {
-				var cfg = readConfig();
 				
-				if(cfg.isPresent()) {
-					Discord.applyConfig(cfg.get());
-					Discord.notifyNewIp(IpChecker.getCurrentIp());
+				for(WatchEvent<?> event : key.pollEvents()) {
+					Path path = (Path) event.context();
+					
+					if(!path.equals(configFile.toPath())) {
+						continue;
+					}
+					
+					System.out.println("reloading config...");
+					
+					var cfg = readConfig();
+					
+					if(cfg.isPresent()) {
+						Discord.applyConfig(cfg.get());
+						Discord.notifyNewIp(IpChecker.getCurrentIp());
+					}
 				}
+				
 				key.reset();
 			}
 		} catch(IOException e) {
