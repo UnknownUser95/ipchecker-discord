@@ -1,5 +1,7 @@
 {
 	"channels": [],
 	"users": [],
-	"server_name": "Your Server name Here (Optional)"
+	"server_name": "Your Server name Here (Optional)",
+	"notify_on_change": false,
+	"notify_initial": true
 }

@@ -9,12 +9,16 @@ public class SendConfig {
 	private List<TextChannel> channels;
 	private List<User>		  users;
 	private String			  serverName;
+	private boolean			  notifyOnChange;
+	private boolean			  notifyInital;
 	
-	public SendConfig(List<TextChannel> channels, List<User> users, String serverName) {
+	public SendConfig(List<TextChannel> channels, List<User> users, String serverName, boolean notifyOnChange, boolean notifyInitial) {
 		super();
-		this.channels	= channels;
-		this.users		= users;
-		this.serverName	= serverName;
+		this.channels		= channels;
+		this.users			= users;
+		this.serverName		= serverName;
+		this.notifyOnChange	= notifyOnChange;
+		this.notifyInital	= notifyInitial;
 	}
 	
 	public List<TextChannel> getChannels() {
@@ -27,5 +31,13 @@ public class SendConfig {
 	
 	public String getServerName() {
 		return serverName;
+	}
+	
+	public boolean doNotifyOnChange() {
+		return notifyOnChange;
+	}
+	
+	public boolean doNotifyInitial() {
+		return notifyInital;
 	}
 }

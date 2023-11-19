@@ -10,12 +10,16 @@ import org.javacord.api.entity.user.*;
 import com.fasterxml.jackson.annotation.*;
 
 public class RawConfig {
-	@JsonProperty
+	@JsonProperty(defaultValue = "[]")
 	private List<Long> users;
-	@JsonProperty
+	@JsonProperty(defaultValue = "[]")
 	private List<Long> channels;
 	@JsonProperty(value = "server_name", defaultValue = "Server")
 	private String	   serverName;
+	@JsonProperty(value = "notify_on_change", defaultValue = "false")
+	private boolean	   notifyOnChange;
+	@JsonProperty(value = "notify_initial", defaultValue = "true")
+	private boolean	   notifyInitial;
 	
 	public SendConfig initialize(DiscordApi api) {
 		List<User>		  userChannels = users.stream()
@@ -28,6 +32,14 @@ public class RawConfig {
 												 .map(Optional::get)
 												 .toList();
 		
-		return new SendConfig(textChannel, userChannels, serverName);
+		return new SendConfig(textChannel, userChannels, serverName, notifyOnChange, notifyInitial);
+	}
+	
+	public boolean doNotifyOnChange() {
+		return notifyOnChange;
+	}
+	
+	public boolean doNotifyInitial() {
+		return notifyInitial;
 	}
 }

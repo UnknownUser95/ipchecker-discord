@@ -25,9 +25,9 @@ public class Main {
 			System.exit(2);
 		}
 		
-		Optional<RawConfig> config = readConfig();
+		Optional<RawConfig> cfg = readConfig();
 		
-		if(config.isEmpty()) {
+		if(cfg.isEmpty()) {
 			System.out.println("config file is broken!");
 			System.exit(3);
 		}
@@ -35,10 +35,15 @@ public class Main {
 		Discord.init();
 		IpChecker.init();
 		
-		Discord.applyConfig(config.get());
+		RawConfig config = cfg.get();
 		
-		new Thread(Main::watchConfigFile, "config watcher").start();
-		new Thread(() -> Discord.notifyNewIp(IpChecker.getCurrentIp()), "initial message").start();
+		Discord.applyConfig(config);
+		
+		new Thread(Main::watchConfigFile, "config-watcher").start();
+		
+		if(config.doNotifyInitial()) {
+			new Thread(() -> Discord.notifyNewIp(IpChecker.getCurrentIp()), "initial-message").start();
+		}
 		
 		scheduleCheck();
 		
@@ -55,20 +60,28 @@ public class Main {
 			WatchKey key;
 			while((key = watchService.take()) != null) {
 				
+				boolean updateDone = false;
+				
 				for(WatchEvent<?> event : key.pollEvents()) {
 					Path path = (Path) event.context();
 					
-					if(!path.equals(configFile.toPath())) {
+					if(updateDone || !path.equals(configFile.toPath())) {
 						continue;
 					}
 					
+					updateDone = true;
 					System.out.println("reloading config...");
 					
 					var cfg = readConfig();
 					
 					if(cfg.isPresent()) {
-						Discord.applyConfig(cfg.get());
-						Discord.notifyNewIp(IpChecker.getCurrentIp());
+						RawConfig config = cfg.get();
+						
+						Discord.applyConfig(config);
+						
+						if(config.doNotifyOnChange()) {
+							Discord.notifyNewIp(IpChecker.getCurrentIp());
+						}
 					}
 				}
 				
