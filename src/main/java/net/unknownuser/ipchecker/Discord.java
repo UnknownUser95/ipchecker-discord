@@ -28,6 +28,7 @@ public abstract class Discord {
 			api = new DiscordApiBuilder().setToken(EnvArgs.API_TOKEN.get())
 										 .login()
 										 .join();
+			
 			addSlashCommand();
 			
 			Runtime.getRuntime()

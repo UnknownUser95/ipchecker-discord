@@ -36,7 +36,14 @@ public abstract class IpChecker {
 		}
 		
 		lastIp = newIp.get();
+		writeIP(lastIp);
 		return Optional.of(lastIp);
+	}
+	
+	public static void writeIP(String ip) {
+		try (BufferedWriter bw = new BufferedWriter(new FileWriter(Main.IP_FILE))) {
+			bw.write(ip);
+		} catch(IOException exc) {}
 	}
 	
 	public static String getCurrentIp() {
@@ -52,6 +59,20 @@ public abstract class IpChecker {
 			System.err.println(Instant.now() + ": could not get IP: " + exc.getMessage());
 			return Optional.empty();
 		}
+	}
+	
+	public static Optional<String> getSavedIp() {
+		Optional<String> ip = Optional.empty();
+		
+		if(Main.IP_FILE.exists()) {
+			try (BufferedReader br = new BufferedReader(new FileReader(Main.IP_FILE))) {
+				ip = Optional.of(br.readLine());
+			} catch(IOException exc) {
+				System.out.println("could not read IP file: " + exc.getLocalizedMessage());
+			}
+		}
+		
+		return ip;
 	}
 	
 	private static HttpsURLConnection getConnection() {

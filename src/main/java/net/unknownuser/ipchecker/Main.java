@@ -11,26 +11,11 @@ import net.unknownuser.ipchecker.models.*;
 
 public class Main {
 	
-	public static final File configFile = new File("config.json");
+	public static final File CONFIG_FILE = new File("config.json");
+	public static final File IP_FILE	 = new File("ip.txt");
 	
 	public static void main(String[] args) {
-		if(!EnvArgs.verifyAll()
-				   .isEmpty()) {
-			System.out.println("misconfiguration detected, fix the settings to launch!");
-			System.exit(1);
-		}
-		
-		if(!configFile.exists()) {
-			System.out.println("config file is missing!");
-			System.exit(2);
-		}
-		
-		Optional<RawConfig> cfg = readConfig();
-		
-		if(cfg.isEmpty()) {
-			System.out.println("config file is broken!");
-			System.exit(3);
-		}
+		Optional<RawConfig> cfg = verifyEnvironment();
 		
 		Discord.init();
 		IpChecker.init();
@@ -41,13 +26,42 @@ public class Main {
 		
 		new Thread(Main::watchConfigFile, "config-watcher").start();
 		
-		if(config.doNotifyInitial()) {
+		if(ipHasChanged() || config.doNotifyInitial()) {
 			new Thread(() -> Discord.notifyNewIp(IpChecker.getCurrentIp()), "initial-message").start();
 		}
 		
 		scheduleCheck();
 		
 		System.out.println("startup complete!");
+	}
+	
+	private static boolean ipHasChanged() {
+		String			 currentIp = IpChecker.getCurrentIp();
+		Optional<String> lastIp = IpChecker.getSavedIp();
+		
+		return !(lastIp.isPresent() && lastIp.get()
+											 .equals(currentIp));
+	}
+
+	private static Optional<RawConfig> verifyEnvironment() {
+		if(!EnvArgs.verifyAll()
+				   .isEmpty()) {
+			System.out.println("misconfiguration detected, fix the settings to launch!");
+			System.exit(1);
+		}
+		
+		if(!CONFIG_FILE.exists()) {
+			System.out.println("config file is missing!");
+			System.exit(2);
+		}
+		
+		Optional<RawConfig> cfg = readConfig();
+		
+		if(cfg.isEmpty()) {
+			System.out.println("config file is broken!");
+			System.exit(3);
+		}
+		return cfg;
 	}
 	
 	private static void watchConfigFile() {
@@ -65,7 +79,7 @@ public class Main {
 				for(WatchEvent<?> event : key.pollEvents()) {
 					Path path = (Path) event.context();
 					
-					if(updateDone || !path.equals(configFile.toPath())) {
+					if(updateDone || !path.equals(CONFIG_FILE.toPath())) {
 						continue;
 					}
 					
@@ -95,7 +109,7 @@ public class Main {
 	private static Optional<RawConfig> readConfig() {
 		ObjectMapper mapper = new ObjectMapper();
 		try {
-			RawConfig rawConfig = mapper.readValue(configFile, RawConfig.class);
+			RawConfig rawConfig = mapper.readValue(CONFIG_FILE, RawConfig.class);
 			return Optional.of(rawConfig);
 		} catch(IOException e) {
 			System.out.println(e.getMessage());
