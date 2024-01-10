@@ -60,15 +60,26 @@ public abstract class Discord {
 				return;
 			}
 			
-			boolean hasUpdate = Main.checkUpdate();
+			boolean	hasUpdate = Main.checkUpdate();
+			String	ip		  = IpChecker.getCurrentIp();
 			
-			String message = hasUpdate ? "New IP found: " + IpChecker.getCurrentIp() : "IP has not changed";
+			String message;
+			if(hasUpdate) {
+				message = f("New IP found: %s", ip);
+				notifyNewIp(ip);
+			} else {
+				message = f("IP has not changed (%s)", ip);
+			}
 			
 			interaction.createImmediateResponder()
 					   .setContent(message)
 					   .setFlags(MessageFlag.EPHEMERAL)
 					   .respond();
 		});
+	}
+	
+	private static String f(String format, Object... objects) {
+		return String.format(format, objects);
 	}
 	
 	private static void deleteOldSlashes() {
