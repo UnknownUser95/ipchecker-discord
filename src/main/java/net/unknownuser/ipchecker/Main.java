@@ -26,7 +26,14 @@ public class Main {
 		
 		new Thread(Main::watchConfigFile, "config-watcher").start();
 		
-		if(ipHasChanged() || config.doNotifyInitial()) {
+		boolean notify = config.doNotifyInitial();
+		
+		if(ipHasChanged()) {
+			notify = true;
+			IpChecker.writeCurrentIp();
+		}
+		
+		if(notify) {
 			new Thread(() -> Discord.notifyNewIp(IpChecker.getCurrentIp()), "initial-message").start();
 		}
 		

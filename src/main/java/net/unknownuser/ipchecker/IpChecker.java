@@ -40,6 +40,10 @@ public abstract class IpChecker {
 		return Optional.of(lastIp);
 	}
 	
+	public static void writeCurrentIp() {
+		writeIP(getCurrentIp());
+	}
+	
 	public static void writeIP(String ip) {
 		try (BufferedWriter bw = new BufferedWriter(new FileWriter(Main.IP_FILE))) {
 			bw.write(ip);
