@@ -1,18 +1,17 @@
 package net.unknownuser.ipchecker;
 
+import com.fasterxml.jackson.databind.*;
+import net.unknownuser.ipchecker.models.*;
+
 import java.io.*;
 import java.nio.file.*;
 import java.time.*;
 import java.util.*;
 
-import com.fasterxml.jackson.databind.*;
-
-import net.unknownuser.ipchecker.models.*;
-
 public class Main {
 	
 	public static final File CONFIG_FILE = new File("config.json");
-	public static final File IP_FILE	 = new File("ip.txt");
+	public static final File IP_FILE     = new File("ip.txt");
 	
 	public static void main(String[] args) {
 		Optional<RawConfig> cfg = verifyEnvironment();
@@ -28,12 +27,12 @@ public class Main {
 		
 		boolean notify = config.doNotifyInitial();
 		
-		if(ipHasChanged()) {
+		if (ipHasChanged()) {
 			notify = true;
 			IpChecker.writeCurrentIp();
 		}
 		
-		if(notify) {
+		if (notify) {
 			new Thread(() -> Discord.notifyNewIp(IpChecker.getCurrentIp()), "initial-message").start();
 		}
 		
@@ -43,28 +42,28 @@ public class Main {
 	}
 	
 	private static boolean ipHasChanged() {
-		String			 currentIp = IpChecker.getCurrentIp();
-		Optional<String> lastIp = IpChecker.getSavedIp();
+		String           currentIp = IpChecker.getCurrentIp();
+		Optional<String> lastIp    = IpChecker.getSavedIp();
 		
 		return !(lastIp.isPresent() && lastIp.get()
-											 .equals(currentIp));
+			.equals(currentIp));
 	}
-
+	
 	private static Optional<RawConfig> verifyEnvironment() {
-		if(!EnvArgs.verifyAll()
-				   .isEmpty()) {
+		if (!EnvArgs.verifyAll()
+			.isEmpty()) {
 			System.out.println("misconfiguration detected, fix the settings to launch!");
 			System.exit(1);
 		}
 		
-		if(!CONFIG_FILE.exists()) {
+		if (!CONFIG_FILE.exists()) {
 			System.out.println("config file is missing!");
 			System.exit(2);
 		}
 		
 		Optional<RawConfig> cfg = readConfig();
 		
-		if(cfg.isEmpty()) {
+		if (cfg.isEmpty()) {
 			System.out.println("config file is broken!");
 			System.exit(3);
 		}
@@ -74,19 +73,19 @@ public class Main {
 	private static void watchConfigFile() {
 		System.out.println("watcher started!");
 		try (WatchService watchService = FileSystems.getDefault()
-													.newWatchService()) {
+			.newWatchService()) {
 			Path.of(".")
 				.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
 			
 			WatchKey key;
-			while((key = watchService.take()) != null) {
+			while ((key = watchService.take()) != null) {
 				
 				boolean updateDone = false;
 				
-				for(WatchEvent<?> event : key.pollEvents()) {
+				for (WatchEvent<?> event : key.pollEvents()) {
 					Path path = (Path) event.context();
 					
-					if(updateDone || !path.equals(CONFIG_FILE.toPath())) {
+					if (updateDone || !path.equals(CONFIG_FILE.toPath())) {
 						continue;
 					}
 					
@@ -95,12 +94,12 @@ public class Main {
 					
 					var cfg = readConfig();
 					
-					if(cfg.isPresent()) {
+					if (cfg.isPresent()) {
 						RawConfig config = cfg.get();
 						
 						Discord.applyConfig(config);
 						
-						if(config.doNotifyOnChange()) {
+						if (config.doNotifyOnChange()) {
 							Discord.notifyNewIp(IpChecker.getCurrentIp());
 						}
 					}
@@ -108,9 +107,10 @@ public class Main {
 				
 				key.reset();
 			}
-		} catch(IOException e) {
+		} catch (IOException e) {
 			throw new RuntimeException(e);
-		} catch(InterruptedException e) {}
+		} catch (InterruptedException e) {
+		}
 	}
 	
 	private static Optional<RawConfig> readConfig() {
@@ -118,7 +118,7 @@ public class Main {
 		try {
 			RawConfig rawConfig = mapper.readValue(CONFIG_FILE, RawConfig.class);
 			return Optional.of(rawConfig);
-		} catch(IOException e) {
+		} catch (IOException e) {
 			System.out.println(e.getMessage());
 			return Optional.empty();
 		}
@@ -127,9 +127,9 @@ public class Main {
 	private static void scheduleCheck() {
 		LocalDateTime time = getNextHour();
 		
-		ZoneId	   zone		  = ZoneId.systemDefault();
+		ZoneId zone = ZoneId.systemDefault();
 		ZoneOffset zoneOffSet = zone.getRules()
-									.getOffset(time);
+			.getOffset(time);
 		
 		TimerTask updateTask = new TimerTask() {
 			@Override
@@ -139,23 +139,21 @@ public class Main {
 		};
 		
 		Timer timer = new Timer("IpChecker");
-		timer.schedule(updateTask, Date.from(time.toInstant(zoneOffSet)), 1l * 60 * 60 * 1000);
+		timer.schedule(updateTask, Date.from(time.toInstant(zoneOffSet)), 60 * 60 * 1000L);
 	}
 	
 	private static LocalDateTime getNextHour() {
 		LocalDateTime time = LocalDateTime.now();
-		time = time.plusNanos(1000l - time.getNano());
-		time = time.plusSeconds(60l - time.getSecond());
-		time = time.plusMinutes(60l - time.getMinute());
+		time = time.plusNanos(1000L - time.getNano());
+		time = time.plusSeconds(60L - time.getSecond());
+		time = time.plusMinutes(60L - time.getMinute());
 		
 		return time;
 	}
 	
 	public static boolean checkUpdate() {
 		Optional<String> newIp = IpChecker.checkForChange();
-		if(newIp.isPresent()) {
-			Discord.notifyNewIp(newIp.get());
-		}
+		newIp.ifPresent(Discord::notifyNewIp);
 		return newIp.isPresent();
 	}
 }

@@ -1,13 +1,11 @@
 package net.unknownuser.ipchecker;
 
+import javax.net.ssl.*;
 import java.io.*;
 import java.net.*;
 import java.time.*;
 import java.util.*;
 
-import javax.net.ssl.*;
-
-// https://ipinfo.io/ip
 public abstract class IpChecker {
 	private IpChecker() {
 		super();
@@ -16,8 +14,8 @@ public abstract class IpChecker {
 	public static final URL IPINFO_URL;
 	static {
 		try {
-			IPINFO_URL = new URI("https://ipinfo.io/ip").toURL(); // NOSONAR
-		} catch(MalformedURLException | URISyntaxException e) {
+			IPINFO_URL = new URI("https://www.icanhazip.com/").toURL(); // NOSONAR
+		} catch (MalformedURLException | URISyntaxException e) {
 			throw new IllegalStateException();
 		}
 	}
@@ -31,7 +29,7 @@ public abstract class IpChecker {
 	public static Optional<String> checkForChange() {
 		Optional<String> newIp = getIP();
 		
-		if(newIp.isEmpty() || lastIp.equals(newIp.get())) {
+		if (newIp.isEmpty() || lastIp.equals(newIp.get())) {
 			return Optional.empty();
 		}
 		
@@ -47,7 +45,8 @@ public abstract class IpChecker {
 	public static void writeIP(String ip) {
 		try (BufferedWriter bw = new BufferedWriter(new FileWriter(Main.IP_FILE))) {
 			bw.write(ip);
-		} catch(IOException exc) {}
+		} catch (IOException exc) {
+		}
 	}
 	
 	public static String getCurrentIp() {
@@ -59,7 +58,7 @@ public abstract class IpChecker {
 		
 		try (BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
 			return Optional.of(br.readLine());
-		} catch(IOException exc) {
+		} catch (IOException exc) {
 			System.err.println(Instant.now() + ": could not get IP: " + exc.getMessage());
 			return Optional.empty();
 		}
@@ -68,10 +67,10 @@ public abstract class IpChecker {
 	public static Optional<String> getSavedIp() {
 		Optional<String> ip = Optional.empty();
 		
-		if(Main.IP_FILE.exists()) {
+		if (Main.IP_FILE.exists()) {
 			try (BufferedReader br = new BufferedReader(new FileReader(Main.IP_FILE))) {
 				ip = Optional.of(br.readLine());
-			} catch(IOException exc) {
+			} catch (IOException exc) {
 				System.out.println("could not read IP file: " + exc.getLocalizedMessage());
 			}
 		}
@@ -86,7 +85,7 @@ public abstract class IpChecker {
 			connection.setRequestMethod("GET");
 			
 			return connection;
-		} catch(IOException e) {
+		} catch (IOException e) {
 			throw new IllegalStateException();
 		}
 	}
